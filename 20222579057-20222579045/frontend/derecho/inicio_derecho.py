@@ -24,13 +24,10 @@ tabla_html = html.Table([
 
 # Contenido de inicio_derecho con la tabla
 inicio_derecho = html.Div([
-    html.H3("Símbolos utilizados en la Clasificación SUCS"),
+    html.H3("Símbolos utilizados en la Clasificación SUCS", style={'text-align': 'center', 'color': 'steelblue'}),
     tabla_html  # Agrega la tabla aquí
 ])
 
 app = dash.Dash(__name__)
 
 app.layout = html.Div([inicio_derecho])
-
-if __name__ == '__main__':
-    app.run_server(debug=True)

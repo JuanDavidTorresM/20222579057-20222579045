@@ -4,14 +4,11 @@ from dash.dependencies import Input, Output
 from dash import html
 from frontend.navegador.navegador import navegador
 from frontend.izquierdo.inicio_izquierdo import inicio_izquierdo
-from frontend.izquierdo.programa_estudiantes_izquierdo import programa_estudiantes_izquierdo
-from frontend.izquierdo.programa_profesional_izquierdo import programa_profesional_izquierdo
+from frontend.izquierdo.programa_izquierdo import programa_izquierdo
 from frontend.derecho.inicio_derecho import inicio_derecho
-from frontend.derecho.programa_estudiantes_derecho import programa_estudiantes_derecho
-from frontend.derecho.programa_profesional_derecho import programa_profesional_derecho
+from frontend.derecho.programa_derecho import programa_derecho
 from frontend.centro.inicio_centro import inicio_centro
-from frontend.centro.programa_estudiantes_centro import programa_estudiantes_centro
-from frontend.centro.programa_profesional_centro import programa_profesional_centro
+from frontend.centro.programa_centro import programa_centro
 from frontend.barra.barra import tabs
 
 # Inicializa la aplicación Dash
@@ -43,9 +40,7 @@ def render_tab_content(active_tab):
     if active_tab == "tab-inicio":
         return inicio_izquierdo, inicio_derecho, inicio_centro
     elif active_tab == "tab-programa-estudiantes":
-        return programa_estudiantes_izquierdo, programa_estudiantes_derecho, programa_estudiantes_centro
-    elif active_tab == "tab-programa-profesional":
-        return programa_profesional_izquierdo, programa_profesional_derecho, programa_profesional_centro
+        return programa_izquierdo, programa_derecho, programa_centro
     return "Error", ""
 
 if __name__ == '__main__':
