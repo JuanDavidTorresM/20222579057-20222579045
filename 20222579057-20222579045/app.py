@@ -13,6 +13,7 @@ from frontend.barra.barra import tabs
 
 # Inicializa la aplicación Dash
 app = dash.Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP])
+server = app.server
 
 # Define el diseño de la aplicación
 app.layout = dbc.Container([
