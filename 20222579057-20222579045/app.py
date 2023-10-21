@@ -4,7 +4,7 @@ from dash.dependencies import Input, Output
 from dash import html
 from frontend.navegador.navegador import navegador
 from frontend.izquierdo.inicio_izquierdo import inicio_izquierdo
-from frontend.izquierdo.programa_izquierdo import programa_izquierdo
+from frontend.izquierdo.programa_izquierdo import programa_izquierdo 
 from frontend.derecho.inicio_derecho import inicio_derecho
 from frontend.derecho.programa_derecho import programa_derecho
 from frontend.centro.inicio_centro import inicio_centro

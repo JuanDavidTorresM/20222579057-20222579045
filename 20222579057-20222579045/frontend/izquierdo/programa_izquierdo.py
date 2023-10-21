@@ -3,104 +3,112 @@ import dash_bootstrap_components as dbc
 from dash import html, dcc
 from dash import dash_table
 import pandas as pd
+import plotly.tools as tls 
+import plotly.graph_objs as go
 from dash.dependencies import Input, Output, State
+from backend.granulometria import granulometria
 
-# Definir tus datos
-malla = [ # Ingresamos todos los datos de las mallas que hay en el video: "https://www.youtube.com/watch?v=GL3q7I2U4K4"
-    "1 1/2 in", # tamiz de 1 1/2"
-    "1 in", # tamiz de 1"
-    "3/4 in", # tamiz de 3/4"
-    "3/8 in", # tamiz de 3/8"
-    "No 4", # tamiz #4
-    "No 10", # tamiz #10
-    "No 20", # tamiz #20
-    "No 40", # tamiz #40
-    "No 60", # tamiz #60
-    "No 100", # tamiz #100
-    "No 200", # tamiz #200
-    "fondo", # Fondo del juego de tamices
-]
+app = dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP])
 
-abertura = [ # Ingresamos todos los datos de abertura de los tamices, estos datos son numéricos
-    37.5, # tamiz de 1 1/2"
-    25, # tamiz de 1"
-    19, # tamiz de 3/4"
-    9.5, # tamiz de 3/8"
-    4.75, # tamiz #4
-    2, # tamiz #10
-    0.85, # tamiz #20
-    0.425, # tamiz #40
-    0.25, # tamiz #60
-    0.15, # tamiz #100
-    0.075, # tamiz #200
-    0, # Fondo del juego de tamices
-]
-retenido = [ # Ingresamos todos los datos de material retenido de los tamices, estos datos son numéricos
-    0, # Cantidad de muestra retenida tamiz de 1 1/2"
-    0, # Cantidad de muestra retenida tamiz de 1"
-    0, # Cantidad de muestra retenida tamiz de 3/4"
-    0, # Cantidad de muestra retenida tamiz de 3/8"
-    5, # Cantidad de muestra retenida tamiz #4
-    5, # Cantidad de muestra retenida tamiz #10
-    70, # Cantidad de muestra retenida tamiz #20
-    70, # Cantidad de muestra retenida tamiz #40
-    70, # Cantidad de muestra retenida tamiz #60
-    270, # Cantidad de muestra retenida tamiz #100
-    10, # Cantidad de muestra retenida tamiz #200
-    35, # Cantidad de muestra fondo del tamiz
-]
-
-# Crear DataFrame
-granulometria = pd.DataFrame({
-    "malla": malla,
-    "abertura": abertura,
-    "retenido": retenido
-})
-
-# Crear la aplicación Dash
-app = dash.Dash(__name__)
-
-# Define el diseño de la aplicación
-programa_izquierdo = html.Div([
-    html.H4("Tabla de Granulometría"),
-    dash_table.DataTable(
-        id='tabla-granulometria',
-        columns=[
-            {'name': 'Malla', 'id': 'malla', 'editable': False},
-            {'name': 'Abertura', 'id': 'abertura', 'editable': False},
-            {'name': 'Retenido', 'id': 'retenido', 'editable': True},
-            {'name': 'Retenido Acumulado', 'id': 'retenido_acumulado', 'editable': False},
-            {'name': 'Pasa G', 'id': 'pasa_g', 'editable': False},
-            {'name': 'Porcentaje Pasa', 'id': 'porcentaje_pasa', 'editable': False},
-        ],
-        data=granulometria.to_dict('records'),
-        editable=True,
-    ),
+def generate_granulometria_plot():
+    trace = go.Scatter(
+        x=granulometria['Abertura'][0:11],
+        y=granulometria['Por_Pasa'][0:11],
+        mode='lines',
+        line=dict(color='black', width=2),
+        name='Curva Granulométrica'
+    )
     
-    # Botón para calcular
-    html.Button("Calcular", id="calcular-button"),
-])
+    layout = go.Layout(
+        title='Curva Granulométrica',
+        xaxis=dict(
+            title='Tamiz (mm)',
+            type='log',
+            autorange=True
+        ),
+        yaxis=dict(
+            title='Porcentaje Pasa Acumulado %',
+            range=[0, 100]
+        )
+    )
 
-# Callback para calcular los valores
-@app.callback(
-    Output('tabla-granulometria', 'data'),
-    Input('calcular-button', 'n_clicks'),
-    [State('tabla-granulometria', 'data')]
+    return {'data': [trace], 'layout': layout}
+
+
+#App layout
+app.layout = dbc.Container(
+    [
+        html.H1("Realización de tablas"),
+        dash_table.DataTable(
+            id='tabla_granulometria',
+            columns=[
+                {'name': 'Malla', 'id': 'Malla','editable': False},
+                {'name': 'Abertura', 'id': 'Abertura','editable': False},
+                {'name': 'Retenido', 'id': 'Retenido', 'editable': True},
+                {'name': 'Retenido_acum', 'id': 'Retenido_acum', 'editable': False},
+                {'name': 'Pasa', 'id': 'Pasa', 'editable': False},
+                {'name': 'Por_Pasa', 'id': 'Por_Pasa', 'editable': False}
+            ],
+            data=granulometria.to_dict('records')           
+            ),
+        dcc.Graph(id='granulometria-plot')
+        
+        
+        
+    ],
+    fluid=True
 )
-def calcular_valores(n_clicks, data):
-    if n_clicks is not None:
-        df = pd.DataFrame(data)
-        df_copy = df.copy()  # Crear una copia del DataFrame
 
-        # Calcular retenido acumulado
-        df_copy["retenido_acumulado"] = df_copy["retenido"].cumsum()
+@app.callback(
+    Output('tabla_granulometria', 'data'),
+    [Input('tabla_granulometria', 'data'),
+     Input('tabla_granulometria', 'columns')]
+)
 
-        # Calcular pasa_g
-        df_copy["pasa_g"] = df_copy["retenido_acumulado"].iloc[-1] - df_copy["retenido_acumulado"]
+def update_granulometria_table(rows, columns):
+    granulometria = pd.DataFrame(rows)
+    granulometria["Retenido"] = granulometria["Retenido"].astype("int") 
+    granulometria["Retenido_acum"]= granulometria["Retenido"].cumsum() #se crea una columna para retenido acummulado y se aplica cumsum a la columna retenido para hallar su acumulado
+    granulometria["Pasa"]= granulometria["Retenido"].sum()-granulometria["Retenido_acum"] #Se crea la columna Pasa y se realiza la resta del total de la muestra menos el retenido acumulado en cada fila
+    granulometria["Por_Pasa"]= round(granulometria["Pasa"]*100/granulometria["Retenido"].sum(),2) #Se crea la columna % pasa y se realiza la operació entre la columna pasa por 100 dividido en el total de la muetra
+      
+    # Convertir las columnas numéricas a str para evitar el error
+    granulometria["Retenido"] = granulometria["Retenido"].astype(str)
+    granulometria["Retenido_acum"] = granulometria["Retenido_acum"].astype(str)
+    granulometria["Pasa"] = granulometria["Pasa"].astype(str)
+    granulometria["Por_Pasa"] = granulometria["Por_Pasa"].astype(str)
+         
+    return granulometria.to_dict('records')
 
-        # Calcular porcentaje_pasa
-        df_copy["porcentaje_pasa"] = (df_copy["pasa_g"] / df_copy["retenido_acumulado"].iloc[-1] * 100).round(3)
+@app.callback(
+    Output('granulometria-plot', 'figure'),
+    [Input('tabla_granulometria', 'data')]
+)
+def update_granulometria_plot(rows):
+    granulometria = pd.DataFrame(rows)
+    
+    trace = go.Scatter(
+        x=granulometria['Abertura'][0:11],
+        y=granulometria['Por_Pasa'][0:11],
+        mode='lines',
+        line=dict(color='black', width=2),
+        name='Curva Granulométrica'
+    )
+    
+    layout = go.Layout(
+        title='Curva Granulométrica',
+        xaxis=dict(
+            title='Tamiz (mm)',
+            type='log',
+            autorange=True
+        ),
+        yaxis=dict(
+            title='Porcentaje Pasa Acumulado %',
+            range=[0, 100]
+        )
+    )
 
-        return df_copy.to_dict('records')
-    else:
-        return data
+    return {'data': [trace], 'layout': layout}
+
+if __name__ == "__main__":
+    app.run_server(debug=True)
